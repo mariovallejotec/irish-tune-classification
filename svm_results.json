@@ -1,0 +1,16 @@
+{
+  "linear": {
+    "val_acc": 0.8229704364148287,
+    "val_macro_f1": 0.7446903321831351,
+    "test_acc": 0.8141064685101718,
+    "test_macro_f1": 0.7447513621714973,
+    "classification_report": "              precision    recall  f1-score   support\n\n   barndance      0.285     0.473     0.356       296\n    hornpipe      0.466     0.586     0.519       608\n         jig      1.000     1.000     1.000      2008\n       march      0.355     0.492     0.412       323\n     mazurka      0.318     0.733     0.444        75\n       polka      1.000     1.000     1.000       654\n        reel      0.920     0.752     0.828      2956\n       slide      1.000     1.000     1.000       170\n    slip jig      1.000     1.000     1.000       278\n  strathspey      0.445     0.587     0.506       201\n   three-two      1.000     1.000     1.000        51\n       waltz      0.959     0.800     0.872       589\n\n    accuracy                          0.814      8209\n   macro avg      0.729     0.785     0.745      8209\nweighted avg      0.858     0.814     0.830      8209\n"
+  },
+  "rbf": {
+    "val_acc": 0.8309479117785078,
+    "val_macro_f1": 0.7471967801602863,
+    "test_acc": 0.8268973078328664,
+    "test_macro_f1": 0.7496971464449423,
+    "classification_report": "              precision    recall  f1-score   support\n\n   barndance      0.317     0.493     0.386       296\n    hornpipe      0.498     0.628     0.556       608\n         jig      0.996     0.996     0.996      2008\n       march      0.437     0.591     0.503       323\n     mazurka      0.388     0.413     0.400        75\n       polka      0.989     0.985     0.987       654\n        reel      0.907     0.770     0.833      2956\n       slide      1.000     0.971     0.985       170\n    slip jig      0.996     0.964     0.980       278\n  strathspey      0.549     0.562     0.555       201\n   three-two      1.000     0.882     0.938        51\n       waltz      0.863     0.895     0.878       589\n\n    accuracy                          0.827      8209\n   macro avg      0.745     0.763     0.750      8209\nweighted avg      0.854     0.827     0.837      8209\n"
+  }
+}

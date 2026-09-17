@@ -1,0 +1,143 @@
+% -----------------------------------------------
+% ISMIR 2026 LBD submission
+% -----------------------------------------------
+
+\documentclass{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[lbd,submission]{ismir}
+\usepackage{amsmath,cite,url}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,arrows.meta,positioning,fit}
+\usepackage{amssymb} % \checkmark
+\usepackage{pifont} % \ding{55}
+\def\lbd{}
+
+\title{Classifying Irish Tune Types from ABC Notation with a Character-Level LSTM}
+
+\oneauthor
+  {Mario Vallejo Reyes}
+  {Department of Media and Digital Culture, Tecnol\'{o}gico de Monterrey, Mexico \\ {\tt mariovallejo@tec.mx}}
+
+\def\authorname{M. Vallejo Reyes}
+
+\sloppy
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Irish traditional tune types (reels, jigs, hornpipes, etc.) have been classified using hand-crafted symbolic features or audio embeddings of synthesized scores; neural sequence models trained on the same ABC-notation corpora have so far been used only for tune generation, not classification. This work trains a character-level LSTM directly on raw ABC-notation transcriptions from The Session to classify tune type across twelve categories, and compares it against a support-vector-machine baseline built on music21-derived pitch, interval, and rhythm histograms, following prior symbolic-feature classifiers for this task. Both models are evaluated on a piece-level train/validation/test split to avoid leakage between settings of the same tune. Without class-weighted training, the LSTM reaches 83.9\% test accuracy, exceeding the SVM baseline's 82.7\%, but the SVM retains a higher macro-F1 (0.739 vs.\ 0.692), reflecting a trade-off between overall accuracy and balanced performance on metrically similar minority classes. A lightweight neural sequence model can match a hand-engineered baseline directly from text, without audio synthesis or manual feature design, while class imbalance remains an open challenge.
+\end{abstract}
+
+\section{Introduction}\label{sec:introduction}
+
+Irish traditional tune types are distinguished primarily by meter and rhythmic feel rather than pitch content, and correctly labelling a tune with its type is a routine task for archives and community repositories such as The Session~\cite{TheSession}, which hosts tens of thousands of tunes in ABC notation, a compact text-based symbolic format. Prior work has approached this task with classical classifiers on hand-crafted symbolic features: Martins and Silla trained decision trees reaching 92.3\% overall precision across eleven genres, with substantially lower precision on metrically similar types such as barndance~\cite{Martins2015}, while Kermit-Canfield and Roman found that reels and hornpipes, which share a similar meter, remained close to chance even for the best classifier~\cite{Kermit2015}. Other work has used deep embeddings of audio synthesized from scores~\cite{Jimenez2024}, and, most recently, data augmentation applied directly to symbolic ABC scores~\cite{Navarro2025}. Separately, neural sequence models have been trained on the same ABC corpora, but only for tune generation~\cite{Sturm2015,Wu2023}. To the best of the author's knowledge, no prior work trains a neural sequence model end-to-end and directly on raw ABC text for tune-type classification, without synthesizing audio or engineering features by hand. This work addresses that gap and reports where a character-level LSTM succeeds and fails relative to a feature-based SVM baseline.
+
+\section{Method}\label{sec:method}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+    font=\scriptsize,
+    >=Latex,
+    src/.style={draw, rounded corners, align=center, minimum height=0.6cm,
+                text width=7.2cm, inner sep=3pt, fill=gray!12},
+    path/.style={draw, align=center, minimum height=0.9cm,
+                 text width=3.45cm, inner sep=3pt, fill=green!8},
+    out/.style={draw, rounded corners, align=center, minimum height=0.6cm,
+                text width=7.2cm, inner sep=3pt, fill=gray!12},
+    arr/.style={-{Latex[length=1.8mm]}, line width=0.5pt}
+  ]
+  \node[src] (data) at (0,0) {ABC-notation tune (raw text), from The Session};
+  \node[path] (feat) at (-1.85,-1.15) {music21: 60 pitch/rhythm features};
+  \node[path] (tok) at (1.85,-1.15) {Character tokenizer (raw text)};
+  \node[path] (svm) at (-1.85,-2.3) {SVM (RBF kernel)};
+  \node[path] (lstm) at (1.85,-2.3) {BiLSTM (hidden 128)};
+  \node[out] (pred) at (0,-3.45) {Tune-type prediction (12 classes)};
+
+  \draw[arr] (data.south) -- ++(0,-0.15) -| (feat.north);
+  \draw[arr] (data.south) -- ++(0,-0.15) -| (tok.north);
+  \draw[arr] (feat) -- (svm);
+  \draw[arr] (tok) -- (lstm);
+  \draw[arr] (svm.south) -- ++(0,-0.2) -| (pred.north);
+  \draw[arr] (lstm.south) -- ++(0,-0.2) -| (pred.north);
+\end{tikzpicture}
+\caption{The two classification pipelines compared in this work: a feature-engineered SVM baseline and an end-to-end LSTM trained directly on raw ABC text.}
+\label{fig:pipeline}
+\end{figure}
+
+Figure~\ref{fig:pipeline} summarizes the two pipelines compared in this work.
+
+Because reels, jigs, and hornpipes are set apart mainly by meter and rhythmic feel rather than melodic content, a classifier for this task must learn rhythmic structure directly from the transcription, which motivates comparing a feature-engineered baseline against a model that reads the raw character sequence.
+
+\textbf{Data.} Tunes and their type labels are drawn from The Session~\cite{TheSession} (\texttt{tunes.csv}), yielding 55,352 settings across 23,300 unique tunes and 12 tune types after parsing, with a substantial class imbalance (reel: 20,187; three-two: 428). Data are split 70/15/15 into train/validation/test at the tune level, not the setting level, so that no tune appears in more than one split, following the leakage-avoidance practice established for symbolic music classification~\cite{Zhang2023}.
+
+\textbf{Baseline.} Following~\cite{Kermit2015,Martins2015}, a support-vector machine is trained on 60 hand-crafted features per tune extracted with music21~\cite{Cuthbert2010}: pitch-class and melodic-interval histograms, melodic direction statistics, note-duration histograms, and meter.
+
+\textbf{Neural model.} A single-layer bidirectional LSTM (hidden size 128), implemented in PyTorch, is trained directly on the raw ABC character sequence (no feature extraction, max length 600), with a linear classification head. The full model totals 209,804 parameters. Training uses AdamW~\cite{Loshchilov2019} with warmup and cosine decay, gradient clipping, dropout (0.3) and weight decay ($10^{-4}$), and early stopping on validation loss (patience 10; Fig.~\ref{fig:curve}) -- hyperparameter choices informed by common practice across recent neural network papers~\cite{Li2026,Gajecki2026,Zohar2026}, since no prior work addresses class imbalance for a neural sequence model on this exact task.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{training_curve.png}
+\caption{LSTM train/validation loss by epoch. Validation loss reaches its minimum at epoch 10, after which training loss keeps decreasing while validation loss rises.}
+\label{fig:curve}
+\end{figure}
+
+\section{Results}\label{sec:results}
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Model & Accuracy & Macro-F1 \\
+\midrule
+SVM (RBF) & 82.7\% & \textbf{0.739} \\
+LSTM (class-weighted) & 78.4\% & 0.653 \\
+LSTM (unweighted) & \textbf{83.9\%} & 0.692 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\caption{Test-set results for the SVM baseline and the LSTM under class-weighted and unweighted training.}
+\label{tab:results}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{confusion_matrix.png}
+\caption{Confusion matrix of the unweighted LSTM on the test set (row-normalized).}
+\label{fig:confmat}
+\end{figure}
+
+The unweighted LSTM's higher accuracy comes from strong performance on majority classes (reel F1 0.882, jig F1 0.966), while precision and recall collapse on tune types that share a meter with more frequent classes (barndance: precision 0.383, recall 0.303; march: precision 0.505, recall 0.302). This is not an arbitrary error pattern (Fig.~\ref{fig:confmat}): reel, hornpipe, and barndance are all played in 4/4 and share a similar eighth-note pulse, whereas jig's distinct 6/8 compound feel gives the model an unambiguous rhythmic cue -- the same reel/hornpipe-type confusions reported for the SVM baseline in~\cite{Kermit2015}. Class-weighted training raises minority-class recall but lowers overall accuracy, indicating that class imbalance, not architecture choice, is the main remaining obstacle for this task.
+
+\textbf{Ablation.} Table~\ref{tab:ablation} evaluates the contribution of class-weighted loss, regularization (dropout and weight decay), and symbolic transposition augmentation~\cite{Navarro2025} to the LSTM's performance. Augmentation lowers both accuracy and macro-F1 relative to the unaugmented model. Regularization alone leaves test performance almost unchanged while class weighting is on; only removing class weighting, on top of regularization, produces a substantial shift toward higher accuracy at the cost of macro-F1.
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{ccc|cc}
+\toprule
+Class w. & Reg. & Aug. & Accuracy & Macro-F1 \\
+\midrule
+\checkmark & \ding{55} & \ding{55} & 77.5\% & 0.650 \\
+\checkmark & \ding{55} & \checkmark & 76.5\% & 0.628 \\
+\checkmark & \checkmark & \ding{55} & 78.4\% & 0.653 \\
+\ding{55} & \checkmark & \ding{55} & \textbf{83.9\%} & \textbf{0.692} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\caption{Ablation over the LSTM training recipe: class-weighted loss (Class w.), regularization (Reg.: dropout + weight decay), and transposition augmentation (Aug.).}
+\label{tab:ablation}
+\end{table}
+
+\section{Conclusion}\label{sec:conclusion}
+
+A character-level LSTM trained directly on raw ABC-notation text can match or exceed a feature-engineered SVM baseline in accuracy on Irish tune-type classification, without audio synthesis or hand-crafted features, though it does not resolve the class-imbalance problem that the same baseline family already exhibited. Future work will extend this comparison with cross-validation, a direct comparison against recent symbolic-augmentation approaches~\cite{Navarro2025}, and dedicated class-imbalance techniques for sequence models.
+
+\bibliography{ISMIRtemplate}
+
+\end{document}

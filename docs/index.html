@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classifying Irish Tune Types from ABC Notation</title>
+<meta name="description" content="A character-level LSTM trained directly on raw ABC-notation text to classify Irish traditional tune types, compared against a feature-engineered SVM baseline.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1c1b19; --ink-2:#3f3d38; --muted:#6f6a61; --line:#d6d1c7; --bg:#e9e6df; --bg-2:#f0ede7; --card:#f6f4ef;
+    --accent:#2f4f7f; --accent-2:#e3e8ef; --good:#0f6a63; --good-bg:#dfeeeb; --bad:#a3341c;
+    --radius:10px; --maxw:820px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.6;font-size:16.5px;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none;text-underline-offset:2px}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  h1,h2,h3{font-family:"Source Serif 4",Georgia,"Times New Roman",serif;font-weight:600;letter-spacing:-.01em;line-height:1.25}
+  h2{font-size:26px;margin-bottom:6px}
+  h3{font-size:18px;margin:22px 0 8px}
+  p{margin-bottom:14px;color:var(--ink-2)}
+  code{font-family:"JetBrains Mono",SFMono-Regular,Menlo,monospace;font-size:.88em;background:var(--bg-2);padding:2px 6px;border-radius:5px;border:1px solid var(--line)}
+  hr.div{border:none;border-top:1px solid var(--line);margin:0}
+
+  .marker{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
+  .marker .num{font:500 13px "JetBrains Mono",monospace;color:var(--muted)}
+  .marker .lbl{font-size:12.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+
+  main{max-width:var(--maxw);margin:0 auto;min-height:60vh}
+  section{padding:44px 24px}
+  .lead{font-size:17.5px;line-height:1.65;color:var(--ink)}
+  .kw{font-size:13.5px;color:var(--muted);margin-top:10px}
+
+  header.hero{padding-bottom:20px}
+  header.hero .venue{font:500 13px "JetBrains Mono",monospace;color:var(--muted);margin-bottom:14px}
+  header.hero h1{font-size:clamp(26px,3.6vw,36px);margin-bottom:20px}
+  .authors{margin-bottom:22px;font-size:14.5px;color:var(--ink-2)}
+  .authors .author{display:inline}
+  .authors .af{color:var(--muted);font-size:12.5px}
+  .btn{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:var(--ink);border-bottom:1px solid var(--ink);padding-bottom:1px}
+  .btn:hover{color:var(--accent);border-color:var(--accent);text-decoration:none}
+  .btn.soon{color:var(--muted);border-color:var(--line);cursor:default}
+  .btn.soon:hover{color:var(--muted);border-color:var(--line)}
+  .ph{background:#ffe86a;color:#3a3000;padding:0 5px;border-radius:3px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+
+  .tabbar{background:rgba(233,230,223,.94);backdrop-filter:saturate(160%) blur(10px);border-bottom:1px solid var(--line)}
+  .tabbar .inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:2px;padding:10px 20px;overflow-x:auto;scrollbar-width:none}
+  .tabbar .inner::-webkit-scrollbar{display:none}
+  .tabbar .brand{font:600 13.5px "Source Serif 4",Georgia,serif;color:var(--ink);white-space:nowrap;flex:0 0 auto;margin-right:10px;padding-right:14px;border-right:1px solid var(--line)}
+  .tab{appearance:none;border:none;background:transparent;font:500 13px Inter,sans-serif;color:var(--muted);padding:7px 9px;border-radius:6px;cursor:pointer;white-space:nowrap;flex:0 0 auto}
+  .tab:hover{background:var(--bg-2);color:var(--ink)}
+  .tab.active{color:var(--ink);font-weight:600;text-decoration:underline;text-underline-offset:4px}
+  .panel{display:none}
+  .panel.active{display:block}
+
+  body{height:100vh;overflow:hidden;display:flex;flex-direction:column}
+  .tabbar{flex:0 0 auto}
+  main{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  footer{flex:0 0 auto}
+
+  .teaser figure{border:1px solid var(--line);border-radius:var(--radius);padding:14px;background:var(--bg-2)}
+  .teaser img{width:100%;height:auto;display:block;border-radius:4px;filter:brightness(.965)}
+  figcaption{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.55}
+  figcaption b{color:var(--ink-2);font-weight:600}
+
+  ol.steps{list-style:none;counter-reset:step;margin:18px 0 6px;padding-left:0;border-left:2px solid var(--line)}
+  ol.steps li{position:relative;padding:6px 0 6px 22px;font-size:14.5px;color:var(--ink-2)}
+  ol.steps li::before{counter-increment:step;content:counter(step);position:absolute;left:-11px;top:6px;width:20px;height:20px;background:var(--bg);border:2px solid var(--line);border-radius:50%;font:500 10.5px "JetBrains Mono",monospace;color:var(--muted);display:flex;align-items:center;justify-content:center}
+  ol.steps li strong{color:var(--ink)}
+
+  .defs h3{margin-top:24px}
+  .defs h3:first-child{margin-top:18px}
+
+  table.results{width:100%;border-collapse:collapse;margin:18px 0;font-size:14px}
+  table.results th{text-align:left;font:600 11.5px Inter,sans-serif;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);border-bottom:1px solid var(--line);padding:0 10px 8px 0}
+  table.results td{padding:9px 10px 9px 0;border-bottom:1px solid var(--line);vertical-align:top}
+  table.results td.nm{font-weight:600;color:var(--ink);white-space:nowrap}
+  table.results td.best{color:var(--good);font-weight:700}
+  table.results tr:last-child td{border-bottom:none}
+  table.results td.center{text-align:center}
+
+  .note{font-size:13.5px;color:var(--muted);font-style:italic}
+
+  pre{font-family:"JetBrains Mono",SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.6;background:#0f1218;color:#e6e8ec;padding:18px 20px;border-radius:var(--radius);overflow-x:auto;position:relative;margin-top:14px}
+  .copy{position:absolute;top:10px;right:10px;font:600 11.5px Inter,sans-serif;background:#232834;color:#e6e8ec;border:1px solid #343b49;border-radius:6px;padding:5px 9px;cursor:pointer}
+  .copy:hover{background:#2d3442}
+
+  .pdfembed{width:100%;height:70vh;border:1px solid var(--line);border-radius:var(--radius);margin-top:14px}
+
+  footer{background:rgba(233,230,223,.94);backdrop-filter:saturate(160%) blur(10px);border-top:1px solid var(--line)}
+  footer .inner{max-width:var(--maxw);margin:0 auto;padding:14px 24px;font-size:12.5px;color:var(--muted)}
+  footer p{margin-bottom:2px;color:var(--muted)}
+  footer p:last-child{margin-bottom:0}
+
+  @media (max-width:640px){
+    table.results{display:block;overflow-x:auto;white-space:nowrap}
+    .pdfembed{height:50vh}
+  }
+</style>
+</head>
+<body>
+
+<div class="tabbar">
+  <div class="inner">
+    <span class="brand">Irish Tune Classification</span>
+    <button class="tab" data-panel="overview">Overview</button>
+    <button class="tab" data-panel="paper">Paper</button>
+    <button class="tab" data-panel="method">Method</button>
+    <button class="tab" data-panel="results">Results</button>
+    <button class="tab" data-panel="ablation">Ablation</button>
+    <button class="tab" data-panel="code">Code &amp; citation</button>
+  </div>
+</div>
+
+<main>
+
+<section class="panel" id="overview">
+  <header class="hero">
+    <div class="venue">Submitted to ISMIR 2026 &middot; Late-Breaking Demo</div>
+    <h1>Classifying Irish Tune Types from ABC Notation with a Character-Level LSTM</h1>
+    <div class="authors" id="authors">
+      <span class="author">Mario Vallejo Reyes<span class="af"> (Department of Media and Digital Culture, Tecnol&oacute;gico de Monterrey, Mexico)</span></span>
+    </div>
+  </header>
+  <div class="teaser">
+    <figure>
+      <img src="assets/img/confusion_matrix.png" alt="Confusion matrix of the unweighted LSTM on the test set">
+      <figcaption><b>Confusion matrix of the unweighted LSTM on the test set</b> (row-normalized). Reel, hornpipe, and barndance are all played in 4/4 and share a similar eighth-note pulse, which accounts for most of the model's confusions; jig's distinct 6/8 compound feel gives it an unambiguous rhythmic cue instead.</figcaption>
+    </figure>
+  </div>
+  <div class="marker" style="margin-top:26px"><span class="num">Abstract</span></div>
+  <p class="lead">Irish traditional tune types (reels, jigs, hornpipes, etc.) have been classified using hand-crafted symbolic features or audio embeddings of synthesized scores; neural sequence models trained on the same ABC-notation corpora have so far been used only for tune generation, not classification.</p>
+  <p>This work trains a character-level LSTM directly on raw ABC-notation transcriptions from The Session to classify tune type across twelve categories, and compares it against a support-vector-machine baseline built on music21-derived pitch, interval, and rhythm histograms, following prior symbolic-feature classifiers for this task. Both models are evaluated on a piece-level train/validation/test split to avoid leakage between settings of the same tune. Without class-weighted training, the LSTM reaches 83.9% test accuracy, exceeding the SVM baseline's 82.7%, but the SVM retains a higher macro-F1 (0.739 vs. 0.692), reflecting a trade-off between overall accuracy and balanced performance on metrically similar minority classes. A lightweight neural sequence model can match a hand-engineered baseline directly from text, without audio synthesis or manual feature design, while class imbalance remains an open challenge.</p>
+  <p class="kw">Keywords: Music Information Retrieval, Irish traditional music, LSTM, ABC notation, tune classification</p>
+</section>
+
+<section class="panel" id="paper">
+  <div class="marker"><span class="lbl">Paper</span></div>
+  <h2>ISMIR 2026 LBD submission</h2>
+  <p>Two pages of content plus one page of references, submitted to the ISMIR 2026 Late-Breaking Demo session.</p>
+  <a class="btn" href="assets/paper/irish-tune-lstm-lbd.pdf" target="_blank" rel="noopener">Download PDF</a>
+  <embed class="pdfembed" src="assets/paper/irish-tune-lstm-lbd.pdf" type="application/pdf">
+</section>
+
+<section class="panel" id="method">
+  <div class="marker"><span class="num">01</span><span class="lbl">Method</span></div>
+  <h2>Two pipelines on the same raw text</h2>
+  <p>Because reels, jigs, and hornpipes are set apart mainly by meter and rhythmic feel rather than melodic content, a classifier for this task must learn rhythmic structure directly from the transcription. This motivates comparing a feature-engineered baseline against a model that reads the raw character sequence.</p>
+
+  <ol class="steps">
+    <li>ABC-notation tune (raw text), drawn from <a href="https://github.com/adactio/TheSession-data" target="_blank" rel="noopener">The Session</a></li>
+    <li><strong>Baseline branch:</strong> 60 hand-crafted features per tune extracted with music21 &mdash; pitch-class and melodic-interval histograms, melodic direction statistics, note-duration histograms, and meter</li>
+    <li><strong>Neural branch:</strong> character-level tokenizer, no feature extraction</li>
+    <li>SVM (RBF kernel) on the baseline features &nbsp;/&nbsp; single-layer bidirectional LSTM (hidden size 128, 209,804 parameters) on the raw character sequence</li>
+    <li>Tune-type prediction across 12 classes</li>
+  </ol>
+
+  <div class="defs">
+    <h3>Data</h3>
+    <p>Tunes and their type labels are drawn from The Session (<code>tunes.csv</code>), yielding 55,352 settings across 23,300 unique tunes and 12 tune types, with substantial class imbalance (reel: 20,187; three-two: 428). Data are split 70/15/15 into train/validation/test at the tune level, not the setting level, so that no tune appears in more than one split.</p>
+
+    <h3>Neural model</h3>
+    <p>A single-layer bidirectional LSTM, implemented in PyTorch, is trained directly on the raw ABC character sequence (max length 600), with a linear classification head. Training uses AdamW with warmup and cosine decay, gradient clipping, dropout (0.3) and weight decay (10<sup>&minus;4</sup>), and early stopping on validation loss (patience 10).</p>
+  </div>
+
+  <figure style="margin-top:22px">
+    <img src="assets/img/training_curve.png" alt="LSTM train/validation loss by epoch" style="width:100%;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg-2);padding:14px">
+    <figcaption><b>Train/validation loss by epoch.</b> Validation loss reaches its minimum at epoch 10, after which training loss keeps decreasing while validation loss rises &mdash; the point where early stopping restores the best checkpoint.</figcaption>
+  </figure>
+</section>
+
+<section class="panel" id="results">
+  <div class="marker"><span class="num">02</span><span class="lbl">Results</span></div>
+  <h2>The LSTM wins on accuracy, the SVM on macro-F1</h2>
+
+  <table class="results">
+    <thead><tr><th>Model</th><th class="center">Accuracy</th><th class="center">Macro-F1</th></tr></thead>
+    <tbody>
+      <tr><td class="nm">SVM (RBF)</td><td class="center">82.7%</td><td class="center best">0.739</td></tr>
+      <tr><td class="nm">LSTM (class-weighted)</td><td class="center">78.4%</td><td class="center">0.653</td></tr>
+      <tr><td class="nm">LSTM (unweighted)</td><td class="center best">83.9%</td><td class="center">0.692</td></tr>
+    </tbody>
+  </table>
+  <p class="note">Test-set results for the SVM baseline and the LSTM under class-weighted and unweighted training.</p>
+
+  <p>The unweighted LSTM's higher accuracy comes from strong performance on majority classes (reel F1 0.882, jig F1 0.966), while precision and recall collapse on tune types that share a meter with more frequent classes (barndance: precision 0.383, recall 0.303; march: precision 0.505, recall 0.302). This is not an arbitrary error pattern: reel, hornpipe, and barndance are all played in 4/4 and share a similar eighth-note pulse, whereas jig's distinct 6/8 compound feel gives the model an unambiguous rhythmic cue &mdash; the same reel/hornpipe-type confusion reported for SVM baselines in prior work. Class-weighted training raises minority-class recall but lowers overall accuracy, indicating that class imbalance, not architecture choice, is the main remaining obstacle for this task.</p>
+</section>
+
+<section class="panel" id="ablation">
+  <div class="marker"><span class="num">03</span><span class="lbl">Ablation</span></div>
+  <h2>Class weighting, not regularization or augmentation, drives the trade-off</h2>
+  <p>The ablation evaluates the contribution of class-weighted loss, regularization (dropout and weight decay), and symbolic transposition augmentation to the LSTM's performance.</p>
+
+  <table class="results">
+    <thead><tr><th>Class w.</th><th>Reg.</th><th>Aug.</th><th class="center">Accuracy</th><th class="center">Macro-F1</th></tr></thead>
+    <tbody>
+      <tr><td class="center">&#10003;</td><td class="center">&#10007;</td><td class="center">&#10007;</td><td class="center">77.5%</td><td class="center">0.650</td></tr>
+      <tr><td class="center">&#10003;</td><td class="center">&#10007;</td><td class="center">&#10003;</td><td class="center">76.5%</td><td class="center">0.628</td></tr>
+      <tr><td class="center">&#10003;</td><td class="center">&#10003;</td><td class="center">&#10007;</td><td class="center">78.4%</td><td class="center">0.653</td></tr>
+      <tr><td class="center">&#10007;</td><td class="center">&#10003;</td><td class="center">&#10007;</td><td class="center best">83.9%</td><td class="center best">0.692</td></tr>
+    </tbody>
+  </table>
+  <p class="note">Ablation over the LSTM training recipe: class-weighted loss, regularization (dropout + weight decay), and transposition augmentation.</p>
+
+  <p>Augmentation lowers both accuracy and macro-F1 relative to the unaugmented model. Regularization alone leaves test performance almost unchanged while class weighting is on; only removing class weighting, on top of regularization, produces a substantial shift toward higher accuracy at the cost of macro-F1.</p>
+</section>
+
+<section class="panel" id="code">
+  <div class="marker"><span class="num">04</span><span class="lbl">Code</span></div>
+  <h2>Reproduce the pipeline</h2>
+  <p>Data preprocessing, the music21 feature extraction, the SVM baseline, the transposition augmentation, and the LSTM training script are released as Python code on GitHub. The raw dataset itself (<code>tunes.csv</code>) is not redistributed here &mdash; it is downloaded directly from <a href="https://github.com/adactio/TheSession-data" target="_blank" rel="noopener">The Session</a>, in accordance with its data license.</p>
+  <a class="btn" href="https://github.com/mariovallejotec/irish-tune-classification" target="_blank" rel="noopener">github.com/mariovallejotec/irish-tune-classification</a>
+
+  <h3 style="margin-top:36px">Poster &amp; video</h3>
+  <p class="note">Poster (A0) and video not made public yet &mdash; both are required for the ISMIR 2026 camera-ready and will be added here once ready.</p>
+
+  <h3 style="margin-top:24px">Citation</h3>
+  <p><span class="ph">Placeholder entry: to be updated once the submission is accepted.</span></p>
+  <pre id="bib"><button class="copy" onclick="copyBib(this)">Copy</button>@misc{vallejo2026irishtunes,
+  title  = {Classifying Irish Tune Types from ABC Notation with
+            a Character-Level LSTM},
+  author = {Vallejo Reyes, Mario},
+  year   = {2026},
+  note   = {Submitted to ISMIR 2026, Late-Breaking Demo}
+}</pre>
+</section>
+
+</main>
+
+<footer>
+  <div class="inner">
+    <p>Tecnol&oacute;gico de Monterrey</p>
+  </div>
+</footer>
+
+<script>
+var PANELS = ['overview','paper','method','results','ablation','code'];
+function showPanel(id, push){
+  if (PANELS.indexOf(id) < 0) id = 'overview';
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.toggle('active', p.id === id); });
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('active', t.dataset.panel === id); });
+  if (push) history.replaceState(null, '', '#' + id);
+  if (push) document.querySelector('main').scrollTop = 0;
+}
+document.querySelectorAll('.tab').forEach(function(t){
+  t.addEventListener('click', function(){ showPanel(t.dataset.panel, true); });
+});
+window.addEventListener('hashchange', function(){ showPanel(location.hash.slice(1), false); });
+showPanel(location.hash.slice(1), false);
+
+function copyBib(btn){
+  var txt = document.getElementById('bib').innerText.replace(/^Copy\s*/,'');
+  navigator.clipboard.writeText(txt).then(function(){
+    btn.textContent = 'Copied';
+    setTimeout(function(){ btn.textContent = 'Copy'; }, 1500);
+  });
+}
+</script>
+</body>
+</html>
