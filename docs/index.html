@@ -12,7 +12,7 @@
   :root{
     --ink:#1c1b19; --ink-2:#3f3d38; --muted:#6f6a61; --line:#d6d1c7; --bg:#e9e6df; --bg-2:#f0ede7; --card:#f6f4ef;
     --accent:#2f4f7f; --accent-2:#e3e8ef; --good:#0f6a63; --good-bg:#dfeeeb; --bad:#a3341c;
-    --radius:10px; --maxw:820px;
+    --radius:10px; --maxw:1100px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
@@ -92,10 +92,6 @@
 
   .pdfembed{width:100%;height:70vh;border:1px solid var(--line);border-radius:var(--radius);margin-top:14px}
 
-  /* Break out of the narrow reading column for wide media (PDF/poster/video) */
-  .wide{width:92vw;max-width:1400px;margin-left:calc(50% - 46vw)}
-  @media (max-width:640px){ .wide{width:100%;max-width:100%;margin-left:0} }
-
   footer{background:rgba(233,230,223,.94);backdrop-filter:saturate(160%) blur(10px);border-top:1px solid var(--line)}
   footer .inner{max-width:var(--maxw);margin:0 auto;padding:14px 24px;font-size:12.5px;color:var(--muted)}
   footer p{margin-bottom:2px;color:var(--muted)}
@@ -148,7 +144,7 @@
   <div class="marker"><span class="lbl">Paper</span></div>
   <h2>ISMIR 2026 LBD submission</h2>
   <a class="btn" href="assets/paper/irish-tune-lstm-lbd.pdf" target="_blank" rel="noopener">Download PDF</a>
-  <embed class="pdfembed wide" src="assets/paper/irish-tune-lstm-lbd.pdf" type="application/pdf">
+  <embed class="pdfembed" src="assets/paper/irish-tune-lstm-lbd.pdf" type="application/pdf">
 </section>
 
 <section class="panel" id="poster">
@@ -157,12 +153,12 @@
 
   <h3>Poster</h3>
   <a class="btn" href="assets/paper/irish-tune-poster.pdf" target="_blank" rel="noopener">Download poster (PDF)</a>
-  <figure class="wide" style="margin-top:14px">
+  <figure style="margin-top:14px">
     <img src="assets/img/poster_preview.png" alt="ISMIR 2026 LBD poster preview" style="width:100%;border:1px solid var(--line);border-radius:var(--radius)">
   </figure>
 
   <h3>Video</h3>
-  <video class="wide" controls preload="metadata" style="border:1px solid var(--line);border-radius:var(--radius);background:#000">
+  <video controls preload="metadata" style="width:100%;border:1px solid var(--line);border-radius:var(--radius);background:#000">
     <source src="assets/video/irish-tune-video.mp4" type="video/mp4">
     Your browser does not support the video tag. <a href="assets/video/irish-tune-video.mp4">Download the video</a> instead.
   </video>
