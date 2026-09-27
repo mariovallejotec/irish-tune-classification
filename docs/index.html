@@ -64,7 +64,7 @@
   footer{flex:0 0 auto}
 
   .teaser figure{border:1px solid var(--line);border-radius:var(--radius);padding:14px;background:var(--bg-2)}
-  .teaser img{width:100%;height:auto;display:block;border-radius:4px;filter:brightness(.965)}
+  .teaser img{max-width:480px;width:100%;height:auto;display:block;margin:0 auto;border-radius:4px;filter:brightness(.965)}
   figcaption{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.55}
   figcaption b{color:var(--ink-2);font-weight:600}
 
@@ -91,6 +91,10 @@
   .copy:hover{background:#2d3442}
 
   .pdfembed{width:100%;height:70vh;border:1px solid var(--line);border-radius:var(--radius);margin-top:14px}
+
+  /* Break out of the narrow reading column for wide media (PDF/poster/video) */
+  .wide{width:92vw;max-width:1400px;margin-left:calc(50% - 46vw)}
+  @media (max-width:640px){ .wide{width:100%;max-width:100%;margin-left:0} }
 
   footer{background:rgba(233,230,223,.94);backdrop-filter:saturate(160%) blur(10px);border-top:1px solid var(--line)}
   footer .inner{max-width:var(--maxw);margin:0 auto;padding:14px 24px;font-size:12.5px;color:var(--muted)}
@@ -144,22 +148,21 @@
   <div class="marker"><span class="lbl">Paper</span></div>
   <h2>ISMIR 2026 LBD submission</h2>
   <a class="btn" href="assets/paper/irish-tune-lstm-lbd.pdf" target="_blank" rel="noopener">Download PDF</a>
-  <embed class="pdfembed" src="assets/paper/irish-tune-lstm-lbd.pdf" type="application/pdf">
+  <embed class="pdfembed wide" src="assets/paper/irish-tune-lstm-lbd.pdf" type="application/pdf">
 </section>
 
 <section class="panel" id="poster">
   <div class="marker"><span class="lbl">Poster &amp; Video</span></div>
-  <h2>Poster and video</h2>
+  <h2>Presentation materials</h2>
 
   <h3>Poster</h3>
   <a class="btn" href="assets/paper/irish-tune-poster.pdf" target="_blank" rel="noopener">Download poster (PDF)</a>
-  <figure style="margin-top:14px">
-    <img src="assets/img/poster_thumbnail.png" alt="ISMIR 2026 LBD poster preview" style="width:100%;border:1px solid var(--line);border-radius:var(--radius)">
-    <figcaption>Poster preview. Click the link above for the full-resolution PDF.</figcaption>
+  <figure class="wide" style="margin-top:14px">
+    <img src="assets/img/poster_preview.png" alt="ISMIR 2026 LBD poster preview" style="width:100%;border:1px solid var(--line);border-radius:var(--radius)">
   </figure>
 
   <h3>Video</h3>
-  <video controls preload="metadata" style="width:100%;border:1px solid var(--line);border-radius:var(--radius);background:#000">
+  <video class="wide" controls preload="metadata" style="border:1px solid var(--line);border-radius:var(--radius);background:#000">
     <source src="assets/video/irish-tune-video.mp4" type="video/mp4">
     Your browser does not support the video tag. <a href="assets/video/irish-tune-video.mp4">Download the video</a> instead.
   </video>
@@ -172,7 +175,7 @@
 
   <ol class="steps">
     <li>ABC-notation tune (raw text), drawn from <a href="https://github.com/adactio/TheSession-data" target="_blank" rel="noopener">The Session</a></li>
-    <li><strong>Baseline branch:</strong> 60 hand-crafted features per tune extracted with music21 &mdash; pitch-class and melodic-interval histograms, melodic direction statistics, note-duration histograms, and meter</li>
+    <li><strong>Baseline branch:</strong> 60 hand-crafted features per tune extracted with music21: pitch-class and melodic-interval histograms, melodic direction statistics, note-duration histograms, and meter</li>
     <li><strong>Neural branch:</strong> character-level tokenizer, no feature extraction</li>
     <li>SVM (RBF kernel) on the baseline features &nbsp;/&nbsp; single-layer bidirectional LSTM (hidden size 128, 209,804 parameters) on the raw character sequence</li>
     <li>Tune-type prediction across 12 classes</li>
@@ -185,11 +188,6 @@
     <h3>Neural model</h3>
     <p>A single-layer bidirectional LSTM, implemented in PyTorch, is trained directly on the raw ABC character sequence (max length 600), with a linear classification head. Training uses AdamW with warmup and cosine decay, gradient clipping, dropout (0.3) and weight decay (10<sup>&minus;4</sup>), and early stopping on validation loss (patience 10).</p>
   </div>
-
-  <figure style="margin-top:22px">
-    <img src="assets/img/training_curve.png" alt="LSTM train/validation loss by epoch" style="width:100%;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg-2);padding:14px">
-    <figcaption><b>Train/validation loss by epoch.</b> Validation loss reaches its minimum at epoch 10, after which training loss keeps decreasing while validation loss rises &mdash; the point where early stopping restores the best checkpoint.</figcaption>
-  </figure>
 </section>
 
 <section class="panel" id="results">
@@ -206,7 +204,7 @@
   </table>
   <p class="note">Test-set results for the SVM baseline and the LSTM under class-weighted and unweighted training.</p>
 
-  <p>The unweighted LSTM's higher accuracy comes from strong performance on majority classes (reel F1 0.882, jig F1 0.966), while precision and recall collapse on tune types that share a meter with more frequent classes (barndance: precision 0.383, recall 0.303; march: precision 0.505, recall 0.302). This is not an arbitrary error pattern: reel, hornpipe, and barndance are all played in 4/4 and share a similar eighth-note pulse, whereas jig's distinct 6/8 compound feel gives the model an unambiguous rhythmic cue &mdash; the same reel/hornpipe-type confusion reported for SVM baselines in prior work. Class-weighted training raises minority-class recall but lowers overall accuracy, indicating that class imbalance, not architecture choice, is the main remaining obstacle for this task.</p>
+  <p>The unweighted LSTM's higher accuracy comes from strong performance on majority classes (reel F1 0.882, jig F1 0.966), while precision and recall collapse on tune types that share a meter with more frequent classes (barndance: precision 0.383, recall 0.303; march: precision 0.505, recall 0.302). This is not an arbitrary error pattern: reel, hornpipe, and barndance are all played in 4/4 and share a similar eighth-note pulse, whereas jig's distinct 6/8 compound feel gives the model an unambiguous rhythmic cue, the same reel/hornpipe-type confusion reported for SVM baselines in prior work. Class-weighted training raises minority-class recall but lowers overall accuracy, indicating that class imbalance, not architecture choice, is the main remaining obstacle for this task.</p>
 </section>
 
 <section class="panel" id="ablation">
@@ -226,12 +224,17 @@
   <p class="note">Ablation over the LSTM training recipe: class-weighted loss, regularization (dropout + weight decay), and transposition augmentation.</p>
 
   <p>Augmentation lowers both accuracy and macro-F1 relative to the unaugmented model. Regularization alone leaves test performance almost unchanged while class weighting is on; only removing class weighting, on top of regularization, produces a substantial shift toward higher accuracy at the cost of macro-F1.</p>
+
+  <figure style="margin-top:22px">
+    <img src="assets/img/training_curve.png" alt="LSTM train/validation loss by epoch" style="max-width:520px;width:100%;display:block;margin:0 auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg-2);padding:14px">
+    <figcaption><b>Train/validation loss by epoch</b> for the regularized configuration. Validation loss reaches its minimum at epoch 10, after which training loss keeps decreasing while validation loss rises: the point where early stopping restores the best checkpoint.</figcaption>
+  </figure>
 </section>
 
 <section class="panel" id="code">
   <div class="marker"><span class="num">04</span><span class="lbl">Code</span></div>
   <h2>Reproduce the pipeline</h2>
-  <p>Data preprocessing, the music21 feature extraction, the SVM baseline, the transposition augmentation, and the LSTM training script are released as Python code on GitHub. The raw dataset itself (<code>tunes.csv</code>) is not redistributed here &mdash; it is downloaded directly from <a href="https://github.com/adactio/TheSession-data" target="_blank" rel="noopener">The Session</a>, in accordance with its data license.</p>
+  <p>Data preprocessing, the music21 feature extraction, the SVM baseline, the transposition augmentation, and the LSTM training script are released as Python code on GitHub. The raw dataset itself (<code>tunes.csv</code>) is not redistributed here; it is downloaded directly from <a href="https://github.com/adactio/TheSession-data" target="_blank" rel="noopener">The Session</a>, in accordance with its data license.</p>
   <a class="btn" href="https://github.com/mariovallejotec/irish-tune-classification" target="_blank" rel="noopener">github.com/mariovallejotec/irish-tune-classification</a>
 
   <h3 style="margin-top:24px">Citation</h3>
