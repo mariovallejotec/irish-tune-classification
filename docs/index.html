@@ -110,6 +110,7 @@
     <span class="brand">Irish Tune Classification</span>
     <button class="tab" data-panel="overview">Overview</button>
     <button class="tab" data-panel="paper">Paper</button>
+    <button class="tab" data-panel="poster">Poster &amp; Video</button>
     <button class="tab" data-panel="method">Method</button>
     <button class="tab" data-panel="results">Results</button>
     <button class="tab" data-panel="ablation">Ablation</button>
@@ -121,7 +122,7 @@
 
 <section class="panel" id="overview">
   <header class="hero">
-    <div class="venue">Submitted to ISMIR 2026 &middot; Late-Breaking Demo</div>
+    <div class="venue">Accepted at ISMIR 2026 &middot; Late-Breaking/Demo</div>
     <h1>Classifying Irish Tune Types from ABC Notation with a Character-Level LSTM</h1>
     <div class="authors" id="authors">
       <span class="author">Mario Vallejo Reyes<span class="af"> (Department of Media and Digital Culture, Tecnol&oacute;gico de Monterrey, Mexico)</span></span>
@@ -144,6 +145,25 @@
   <h2>ISMIR 2026 LBD submission</h2>
   <a class="btn" href="assets/paper/irish-tune-lstm-lbd.pdf" target="_blank" rel="noopener">Download PDF</a>
   <embed class="pdfembed" src="assets/paper/irish-tune-lstm-lbd.pdf" type="application/pdf">
+</section>
+
+<section class="panel" id="poster">
+  <div class="marker"><span class="lbl">Poster &amp; Video</span></div>
+  <h2>ISMIR 2026 LBD poster and presentation video</h2>
+  <p>A0 landscape poster and a 5-minute walkthrough video, prepared for the ISMIR 2026 Late-Breaking/Demo session (virtual presentation).</p>
+
+  <h3>Poster</h3>
+  <a class="btn" href="assets/paper/irish-tune-poster.pdf" target="_blank" rel="noopener">Download poster (PDF, A0)</a>
+  <figure style="margin-top:14px">
+    <img src="assets/img/poster_thumbnail.png" alt="ISMIR 2026 LBD poster preview" style="width:100%;border:1px solid var(--line);border-radius:var(--radius)">
+    <figcaption>Poster preview. Click the link above for the full-resolution PDF.</figcaption>
+  </figure>
+
+  <h3>Video</h3>
+  <video controls preload="metadata" style="width:100%;border:1px solid var(--line);border-radius:var(--radius);background:#000">
+    <source src="assets/video/irish-tune-video.mp4" type="video/mp4">
+    Your browser does not support the video tag. <a href="assets/video/irish-tune-video.mp4">Download the video</a> instead.
+  </video>
 </section>
 
 <section class="panel" id="method">
@@ -233,7 +253,7 @@
 </footer>
 
 <script>
-var PANELS = ['overview','paper','method','results','ablation','code'];
+var PANELS = ['overview','paper','poster','method','results','ablation','code'];
 function showPanel(id, push){
   if (PANELS.indexOf(id) < 0) id = 'overview';
   document.querySelectorAll('.panel').forEach(function(p){ p.classList.toggle('active', p.id === id); });

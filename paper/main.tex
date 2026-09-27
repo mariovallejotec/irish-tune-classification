@@ -5,7 +5,7 @@
 \documentclass{article}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage[lbd,submission]{ismir}
+\usepackage[lbd]{ismir}
 \usepackage{amsmath,cite,url}
 \usepackage{graphicx}
 \usepackage{color}
@@ -14,13 +14,14 @@
 \usetikzlibrary{shapes.geometric,arrows.meta,positioning,fit}
 \usepackage{amssymb} % \checkmark
 \usepackage{pifont} % \ding{55}
+\usepackage[hidelinks,breaklinks]{hyperref}
 \def\lbd{}
 
 \title{Classifying Irish Tune Types from ABC Notation with a Character-Level LSTM}
 
 \oneauthor
   {Mario Vallejo Reyes}
-  {Department of Media and Digital Culture, Tecnol\'{o}gico de Monterrey, Mexico \\ {\tt mariovallejo@tec.mx}}
+  {Department of Media and Digital Culture, Tecnológico de Monterrey, Mexico \\ mariovallejo@tec.mx}
 
 \def\authorname{M. Vallejo Reyes}
 
@@ -36,7 +37,7 @@ Irish traditional tune types (reels, jigs, hornpipes, etc.) have been classified
 
 \section{Introduction}\label{sec:introduction}
 
-Irish traditional tune types are distinguished primarily by meter and rhythmic feel rather than pitch content, and correctly labelling a tune with its type is a routine task for archives and community repositories such as The Session~\cite{TheSession}, which hosts tens of thousands of tunes in ABC notation, a compact text-based symbolic format. Prior work has approached this task with classical classifiers on hand-crafted symbolic features: Martins and Silla trained decision trees reaching 92.3\% overall precision across eleven genres, with substantially lower precision on metrically similar types such as barndance~\cite{Martins2015}, while Kermit-Canfield and Roman found that reels and hornpipes, which share a similar meter, remained close to chance even for the best classifier~\cite{Kermit2015}. Other work has used deep embeddings of audio synthesized from scores~\cite{Jimenez2024}, and, most recently, data augmentation applied directly to symbolic ABC scores~\cite{Navarro2025}. Separately, neural sequence models have been trained on the same ABC corpora, but only for tune generation~\cite{Sturm2015,Wu2023}. To the best of the author's knowledge, no prior work trains a neural sequence model end-to-end and directly on raw ABC text for tune-type classification, without synthesizing audio or engineering features by hand. This work addresses that gap and reports where a character-level LSTM succeeds and fails relative to a feature-based SVM baseline.
+Irish traditional tune types are distinguished primarily by meter and rhythmic feel rather than pitch content, and correctly labelling a tune with its type is a routine task for archives and community repositories such as The Session~\cite{TheSession}, which hosts tens of thousands of tunes in ABC notation, a compact text-based symbolic format. Prior work has approached this task with classical classifiers on hand-crafted symbolic features: Martins and Silla trained decision trees reaching 92.3\% overall precision across eleven genres, with substantially lower precision on metrically similar types such as barndance~\cite{Martins2015}, while Kermit-Canfield and Roman found that reels and hornpipes, which share a similar meter, remained close to chance even for the best classifier~\cite{Kermit2015}. Other work has used deep embeddings of audio synthesized from scores~\cite{Jimenez2024}, and, most recently, data augmentation applied directly to symbolic ABC scores~\cite{Navarro2025}. Separately, neural sequence models have been trained on the same ABC corpora, but only for tune generation~\cite{Sturm2015,Wu2023}. To the best of the author's knowledge, no prior work trains a neural sequence model end-to-end and directly on raw ABC text for tune-type classification, without synthesizing audio or engineering features by hand. This work addresses that gap and reports where a character-level LSTM succeeds and fails relative to a feature-based SVM baseline. Code and additional results are available online\footnote{\url{https://mariovallejotec.github.io/irish-tune-classification/}}.
 
 \section{Method}\label{sec:method}
 
@@ -71,9 +72,7 @@ Irish traditional tune types are distinguished primarily by meter and rhythmic f
 \label{fig:pipeline}
 \end{figure}
 
-Figure~\ref{fig:pipeline} summarizes the two pipelines compared in this work.
-
-Because reels, jigs, and hornpipes are set apart mainly by meter and rhythmic feel rather than melodic content, a classifier for this task must learn rhythmic structure directly from the transcription, which motivates comparing a feature-engineered baseline against a model that reads the raw character sequence.
+Figure~\ref{fig:pipeline} summarizes the two pipelines compared in this work. Because reels, jigs, and hornpipes are set apart mainly by meter and rhythmic feel rather than melodic content, a classifier for this task must learn rhythmic structure directly from the transcription.
 
 \textbf{Data.} Tunes and their type labels are drawn from The Session~\cite{TheSession} (\texttt{tunes.csv}), yielding 55,352 settings across 23,300 unique tunes and 12 tune types after parsing, with a substantial class imbalance (reel: 20,187; three-two: 428). Data are split 70/15/15 into train/validation/test at the tune level, not the setting level, so that no tune appears in more than one split, following the leakage-avoidance practice established for symbolic music classification~\cite{Zhang2023}.
 
@@ -136,7 +135,7 @@ Class w. & Reg. & Aug. & Accuracy & Macro-F1 \\
 
 \section{Conclusion}\label{sec:conclusion}
 
-A character-level LSTM trained directly on raw ABC-notation text can match or exceed a feature-engineered SVM baseline in accuracy on Irish tune-type classification, without audio synthesis or hand-crafted features, though it does not resolve the class-imbalance problem that the same baseline family already exhibited. Future work will extend this comparison with cross-validation, a direct comparison against recent symbolic-augmentation approaches~\cite{Navarro2025}, and dedicated class-imbalance techniques for sequence models.
+A character-level LSTM trained directly on raw ABC-notation text can match or exceed a feature-engineered SVM baseline in accuracy on Irish tune-type classification, without audio synthesis or hand-crafted features, though it does not resolve the class-imbalance problem that the same baseline family already exhibited. Future work includes cross-validation, comparison against recent symbolic-augmentation approaches~\cite{Navarro2025}, and dedicated class-imbalance techniques for sequence models.
 
 \bibliography{ISMIRtemplate}
 
